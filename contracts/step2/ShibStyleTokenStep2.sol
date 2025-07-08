@@ -64,10 +64,10 @@ contract ShibStyleTokenStep2 is ERC20 , Ownable {
 
     //重写 transfer 函数，添加税费逻辑
     //internal override
-    function _transfer(
+    function transfer(
         address sender,
         address recipient, 
-        uint256 amount) internal  override {
+        uint256 amount) internal  {
             // 计算税费 销毁的税
             uint256 taxAmount = (amount * developmentTaxRate) / 100;
             // 计算流动性税

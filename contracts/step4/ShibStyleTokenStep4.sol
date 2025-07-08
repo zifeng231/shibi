@@ -1,14 +1,14 @@
 pragma solidity ^0.8.28;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 
 // 引入Ownable用于权限管理（只有 owner 可调整税率）
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 // 新增：引入ReentrancyGuard防止重入攻击（处理ETH转账时必要）
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "./ReentrancyGuard.sol";
 
-contract ShibStyleTokenStep4 is ERC20 , Ownable {
+contract ShibStyleTokenStep4 is ERC20Permit , Ownable, ReentrancyGuard {
 
     //=====新增：流动性操作事件=====
     event LiquidityAdded(
@@ -61,12 +61,12 @@ contract ShibStyleTokenStep4 is ERC20 , Ownable {
     // 添加流动性
     function addLiquidity(uint256 amountToken) external payable nonReentrant {
         require(liquidityAddress != address(0), "Liquidity address not set");
-        require(amountToken > 0 && msg.value > 0, "must  > 0 ");        //1,计算流动性池中代币与eth的比例
+        require(amountToken > 0 && msg.value > 0, "must  > 0 ");   
         // 转移代币到流动性池地址
         _transfer(msg.sender, liquidityAddress, amountToken);
         // 记录流动性添加事件
         // 2. 将用户转入的ETH发送到流动性池（实际项目中可能需要调用DEX的addLiquidity函数）
-        (bool success, ) = liquidityPool.call{value: msg.value}("");
+        (bool success, ) = liquidityAddress.call{value: msg.value}("");
         require(success, "transfer failed");
 
         emit LiquidityAdded(msg.sender, amountToken, msg.value);
@@ -74,12 +74,12 @@ contract ShibStyleTokenStep4 is ERC20 , Ownable {
 
      // 从流动性池移除流动性（返回代币+ETH）
     function removeLiquidity(uint256 amountToken) external nonReentrant {
-        require(liquidityPool != address(0), "no set liquidity pool");
+        require(liquidityAddress != address(0), "no set liquidity pool");
         require(amountToken > 0, "move amount must be > 0");
 
         // 1. 计算流动性池中代币与ETH的比例（简化版：按当前余额比例）
-        uint256 poolTokenBalance = balanceOf(liquidityPool);  // 池中的代币余额
-        uint256 poolEthBalance = address(liquidityPool).balance;  // 池中的ETH余额
+        uint256 poolTokenBalance = balanceOf(liquidityAddress);  // 池中的代币余额
+        uint256 poolEthBalance = address(liquidityAddress).balance;  // 池中的ETH余额
         require(poolTokenBalance >= amountToken, "liquidity pool has not enough token");
 
         // 2. 计算应返还的ETH（按代币比例）
@@ -87,7 +87,7 @@ contract ShibStyleTokenStep4 is ERC20 , Ownable {
         require(ethToReturn > 0, "failed to calculate ETH to return");
 
         // 3. 从流动性池转账代币到用户
-        _transfer(liquidityPool, msg.sender, amountToken);
+        _transfer(liquidityAddress, msg.sender, amountToken);
 
         // 4. 从流动性池转账ETH到用户
         (bool success, ) = msg.sender.call{value: ethToReturn}("");
@@ -104,7 +104,7 @@ contract ShibStyleTokenStep4 is ERC20 , Ownable {
         string memory symbol,
         uint256 totalSupply, // 总供应量（如1000万亿：1）
         address _marketingAddress // 营销钱包地址
-    ) ERC20(name, symbol)  Ownable(msg.sender){//部署者为 owner
+    ) ERC20Permit(name) ERC20(name, symbol)  Ownable(msg.sender){//部署者为 owner
         require(_marketingAddress != address(0), "Invalid marketing address");
         marketingAddress = _marketingAddress;
         // 将总供应量转换为最小单位（如1个代币 = 10**18 wei）
@@ -133,16 +133,16 @@ contract ShibStyleTokenStep4 is ERC20 , Ownable {
         
         taxRate = _taxRate;
         liquidityTaxRate = _liquidityTaxRate;
-        marketingTaxRate = _marketingTaxRate;
+        marketingTaxRate = _marketingTaxRate;   
         developmentTaxRate = _developmentTaxRate;
     }
 
     //重写 transfer 函数，添加税费逻辑
     //internal override
-    function _transfer(
+    function transfer(
         address sender,
         address recipient, 
-        uint256 amount) internal  override {
+        uint256 amount) internal {
             //==新增==
             // 校验交易限制
             //判断是否在白名单中

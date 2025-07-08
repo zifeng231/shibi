@@ -83,10 +83,10 @@ contract ShibStyleTokenStep3 is ERC20 , Ownable {
 
     //重写 transfer 函数，添加税费逻辑
     //internal override
-    function _transfer(
+    function transfer(
         address sender,
         address recipient, 
-        uint256 amount) internal  override {
+        uint256 amount) internal  {
             //==新增==
             // 校验交易限制
             //判断是否在白名单中
