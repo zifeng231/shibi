@@ -8,6 +8,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 // 新增：引入ReentrancyGuard防止重入攻击（处理ETH转账时必要）
 import "./ReentrancyGuard.sol";
 
+import "hardhat/console.sol";
+
 contract ShibStyleTokenStep4 is ERC20Permit , Ownable, ReentrancyGuard {
 
     //=====新增：流动性操作事件=====
@@ -108,7 +110,7 @@ contract ShibStyleTokenStep4 is ERC20Permit , Ownable, ReentrancyGuard {
         require(_marketingAddress != address(0), "Invalid marketing address");
         marketingAddress = _marketingAddress;
         // 将总供应量转换为最小单位（如1个代币 = 10**18 wei）
-        _mint(msg.sender, totalSupply * 10 ** decimals());
+        _mint(msg.sender, totalSupply * 10 ** 4);
         //==新增==
         //初始单笔最大交易为总供应量的1%（可后续调整）
         maxTransactionAmount = totalSupply / 100;
@@ -153,10 +155,13 @@ contract ShibStyleTokenStep4 is ERC20Permit , Ownable, ReentrancyGuard {
             
             // 计算税费 销毁的税
             uint256 taxAmount = (amount * developmentTaxRate) / 100;
+            console.log("destory tax" ,taxAmount);
             // 计算流动性税
             uint256 liquidityTax = (amount * liquidityTaxRate) / 100;
+            console.log("liquidity tax" , liquidityTax);
             // 计算市场营销税
             uint256 marketingTax = (amount * marketingTaxRate) / 100;
+            console.log("marketing tax" , marketingTax);
             // 计算实际转账金额
             uint256 transferAmount = amount - taxAmount - liquidityTax - marketingTax;
             // 确保转账金额不为负

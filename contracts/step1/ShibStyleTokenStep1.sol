@@ -14,4 +14,5 @@ contract ShibStyleTokenStep1 is ERC20 {
         // 将总供应量转换为最小单位（如1个代币 = 10**18 wei）
         _mint(msg.sender, totalSupply * 10 ** decimals());
     }
+
 }
