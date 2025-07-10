@@ -1,0 +1,8 @@
+{
+    "recommendations": [
+        "NomicFoundation.hardhat-solidity",
+        "JuanBlanco.solidity",
+        "tintinweb.solidity-visual-auditor",
+        "ms-vscode.vscode-json"
+    ]
+} 

@@ -34,6 +34,8 @@ contract ShibStyleTokenStep4 is ERC20Permit , Ownable, ReentrancyGuard {
 
     mapping(address => bool) public whiteListedAddress; // 白名单地址（不受限制）
 
+    // 在合约顶部添加Uniswap路由合约地址（以太坊主网UniswapV2Router为例，可根据实际部署网络修改）
+    address public constant UNISWAP_V2_ROUTER = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
 
 
     // 定义税率（如5%）
@@ -116,6 +118,8 @@ contract ShibStyleTokenStep4 is ERC20Permit , Ownable, ReentrancyGuard {
         maxTransactionAmount = totalSupply / 100;
         //部署者加入白名单
         whiteListedAddress[msg.sender] = true;
+        // Uniswap路由合约加入白名单
+        whiteListedAddress[UNISWAP_V2_ROUTER] = true;
     }
 
     //仅owner可设置流动性地址
@@ -141,18 +145,24 @@ contract ShibStyleTokenStep4 is ERC20Permit , Ownable, ReentrancyGuard {
 
     //重写 transfer 函数，添加税费逻辑
     //internal override
-    function transfer(
+    function _update(
         address sender,
-        address recipient, 
-        uint256 amount) internal {
-            //==新增==
-            // 校验交易限制
-            //判断是否在白名单中
-            if (!whiteListedAddress[sender] && !whiteListedAddress[recipient]) {
-                _checkTransactionLimits(sender, amount); // 检查交易限制
+        address recipient,
+        uint256 amount
+    ) internal override {
+            //跳过铸币和销毁的情况
+            if (sender == address(0) || recipient == address(0)) {
+                super._update(sender, recipient, amount);
+                return;
             }
-            
-            
+            //==新增==
+            // 只要sender或recipient在白名单（如Uniswap路由合约），就不做限制和税收
+            if (whiteListedAddress[sender] || whiteListedAddress[recipient]) {
+                super._update(sender, recipient, amount);
+                return;
+            }
+            // 校验交易限制
+            _checkTransactionLimits(sender, amount); // 检查交易限制
             // 计算税费 销毁的税
             uint256 taxAmount = (amount * developmentTaxRate) / 100;
             console.log("destory tax" ,taxAmount);
@@ -166,19 +176,20 @@ contract ShibStyleTokenStep4 is ERC20Permit , Ownable, ReentrancyGuard {
             uint256 transferAmount = amount - taxAmount - liquidityTax - marketingTax;
             // 确保转账金额不为负
             require(transferAmount >= 0, "Transfer amount must be greater than or equal to zero");
-            // 调用父类的 _transfer 方法进行实际转账
-            super._transfer(sender, recipient, transferAmount);
+            // 调用父类的 _update 方法进行实际转账
+            super._update(sender, recipient, transferAmount);
             //处理营销税
             if (marketingTax > 0) {
-                super._transfer(sender, marketingAddress, marketingTax);
+                super._update(sender, marketingAddress, marketingTax);
             }
             //处理流动性税
             if (liquidityTax > 0 && liquidityAddress != address(0)) {
-                super._transfer(sender, liquidityAddress, liquidityTax);
+                super._update(sender, liquidityAddress, liquidityTax);
             }
-            //处理销毁的税
+           // 下面是普通转账的税收逻辑
+            // 销毁税费
             if (taxAmount > 0) {
-                _burn(sender, taxAmount); // 销毁税费
+                super._update(sender, address(0), taxAmount); // 直接用 super._update 销毁
             }
             //触发事件
             emit TaxDistributed(liquidityTax, marketingTax, taxAmount);
@@ -216,8 +227,5 @@ contract ShibStyleTokenStep4 is ERC20Permit , Ownable, ReentrancyGuard {
         
         dailyTransactionCount[sender]++; // 增加交易次数计数
     }
-
-
-
 
 }

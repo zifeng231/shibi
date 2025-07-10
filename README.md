@@ -1,68 +1,62 @@
-# Sample Hardhat Project
-
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a Hardhat Ignition module that deploys that contract.
-
-Try running some of the following tasks:
-
-```shell
-npx hardhat init
-
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat ignition deploy ./ignition/modules/Lock.js
-
-//安装remixd
-npm install -d @remix-project/remixd
-
-//安装失败配置 GitHub SSH 密钥
-//先尝试清理缓存
-npm cache clean --force
-npm install -g @remix-project/remixd
-//生成 SSH 密钥
-//输入以下命令生成密钥（替换为你的 GitHub 邮箱）：
-ssh-keygen -t ed25519 -C "your_email@example.com"
-//按提示连续按三次回车（不设置密码）
-生成的密钥默认保存在：C:\Users\你的用户名\.ssh\id_ed25519.pub
-//复制 SSH 公钥
-cat ~/.ssh/id_ed25519.pub | clip
-//或进入目录：C:\Users\你的用户名\.ssh\
-//用记事本打开id_ed25519.pub文件
-//复制文件中的全部内容
-//添加 SSH 公钥到 GitHub登录 GitHub → 点击右上角头像 → Settings → SSH and GPG keys点击 New SSH key
-//Title 填写：My Windows PC
-//Key 区域粘贴刚才复制的内 点击 Add SSH key
-//测试 SSH 连接
-在 Git Bash 中执行：
-//ssh -T git@github.com
-
-
-
-//启动remixde
-npx remixd
-
-
-
-
-//合约升级
-//使用安装
-npm install -D hardhat-deploy
-//运行
-npx hardhat deploy
-npx hardhat deploy 的作用是：
-自动执行项目中 deploy 文件夹下的所有部署脚本（如 01_depoly_nft_auction.js）。
-根据脚本内容，自动部署智能合约到指定的区块链网络（本地、测试网或主网）。
-会记录合约部署信息（如地址、ABI 等）到 deployments 文件夹，方便前端或后续脚本读取。
-简而言之：
-
-//导入"@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-//npm install @openzeppelin/contracts-upgradeable 如果失败的话用管理员启动
-//npm install @openzeppelin/hardhat-upgrades
-
-
-//集成预言机比价
-//https://docs.chain.link/data-feeds/price-feeds/addresses?page=1&testnetPage=1#sepolia-testnet
-
-
+[基础业务知识](README2.md)
+# 准备工作
+## 环境搭建
+- 安装 VSCode + Solidity 插件
+- 安装 Hardhat
+```javascript
+    npm init -y && npm install --save-dev hardhat
 ```
+- 新建项目目录shibi，使用vscode打开目录，命令行执行命令初始化一个hardhat项目
+ ```javascript
+    npx hardhat init
+```
+- 安装 OpenZeppelin 库（安全的合约基础）
+```javascript
+   npm install @openzeppelin/contracts
+```
+# 开发步骤
+## 步骤1：实现基础 ERC20 代币功能
+先搭建最基础的 ERC20 代币框架，确保代币的发行、转账等核心功能可用。
+```javascript
+   contracts\step1\ShibStyleTokenStep1
+```
+## 步骤2：添加代币税机制
+在基础代币上增加交易税功能，对每笔交易抽税并分配到指定地址（如流动性池、营销钱包）。
+```javascript
+   contracts\step2\ShibStyleTokenStep2
+```
+
+## 步骤 3：添加交易限制功能
+防止大额交易操纵市场，设置单笔最大额度和每日交易次数限制。
+```javascript
+   contracts\step3\ShibStyleTokenStep3
+```
+
+## 步骤 4：集成流动性池交互
+支持用户向流动性池添加 / 移除流动性（与 DEX 的核心交互）。防止大额交易操纵市场，设置单笔最大额度和每日交易次数限制。
+```javascript
+   contracts\step4\ShibStyleTokenStep4
+```
+
+## 步骤 5 编写测试用例
+```javascript
+   contracts\test\Lock.js
+```
+
+## 步骤 6 运行测试用例npx hardhat test，截图如下
+![测试截图](static/image.png)
+
+
+## 步骤 7 集成uniswap的添加和移除流动性
+删除合约中的流动性相关代码，并改造部分代码
+```javascript
+   contracts\step7\ShibStyleTokenStep7
+```
+## 步骤 8 部署合约到remix到Sepolia测试网并获得合约地址
+ - 本地全局安装remix ：  npm install -g @remix-project/remixd  如果报错先尝试npm cache clean --force
+
+ - 安装成功后运行：npx remixd （注意先进入contracts目录，这样才会只同步这个目录）
+ - 开始在remix部署，获取到合约地址：0x0f000aa0106e3281d553b37ffd99d35225184bd1  部署如图
+  ![部署完成截图](static/部署截图.png)
+
+  ## 步骤 9 根据合约地址到remix到https://app.uniswap.org/添加流动性池子

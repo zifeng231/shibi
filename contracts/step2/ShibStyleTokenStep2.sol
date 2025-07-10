@@ -64,10 +64,11 @@ contract ShibStyleTokenStep2 is ERC20 , Ownable {
 
     //重写 transfer 函数，添加税费逻辑
     //internal override
-    function transfer(
+    function _update(
         address sender,
-        address recipient, 
-        uint256 amount) internal  {
+        address recipient,
+        uint256 amount
+    ) internal override {
             // 计算税费 销毁的税
             uint256 taxAmount = (amount * developmentTaxRate) / 100;
             // 计算流动性税
@@ -79,18 +80,18 @@ contract ShibStyleTokenStep2 is ERC20 , Ownable {
             // 确保转账金额不为负
             require(transferAmount >= 0, "Transfer amount must be greater than or equal to zero");
             // 调用父类的 _transfer 方法进行实际转账
-            super._transfer(sender, recipient, transferAmount);
+            super._update(sender, recipient, transferAmount);
             //处理营销税
             if (marketingTax > 0) {
-                super._transfer(sender, marketingAddress, marketingTax);
+                super._update(sender, marketingAddress, marketingTax);
             }
             //处理流动性税
             if (liquidityTax > 0 && liquidityAddress != address(0)) {
-                super._transfer(sender, liquidityAddress, liquidityTax);
+                super._update(sender, liquidityAddress, liquidityTax);
             }
             //处理销毁的税
             if (taxAmount > 0) {
-                _burn(sender, taxAmount); // 销毁税费
+                super._update(sender, address(0), taxAmount); // 直接用 super._update 销毁
             }
             //触发事件
             emit TaxDistributed(liquidityTax, marketingTax, taxAmount);

@@ -1,0 +1,18 @@
+{
+    "solidity.defaultCompiler": "remote",
+    "solidity.compileUsingRemoteVersion": "0.8.28",
+    "solidity.packageDefaultDependenciesDirectory": "node_modules",
+    "solidity.packageDefaultDependenciesContractsDirectory": "",
+    "solidity.remappings": [
+        "@openzeppelin/=node_modules/@openzeppelin/",
+        "@nomicfoundation/=node_modules/@nomicfoundation/"
+    ],
+    "solidity.linter": "solhint",
+    "solidity.formatter": "forge",
+    "solidity.enabledAsYouTypeCompilationErrorCheck": true,
+    "solidity.validationDelay": 1500,
+    "solidity.includePath": [
+        "node_modules",
+        "contracts"
+    ]
+} 
